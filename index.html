@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Booking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+        }
+        form {
+            max-width: 400px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        select, input, button {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px;
+        }
+        a {
+            display: block;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #007BFF;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Book Your Tickets</h1>
+
+    <!-- Link to customer registration page -->
+    <a href="register-customer.html">Register as a New Customer</a>
+
+    <form id="ticketForm">
+        <label for="customerId">Customer:</label>
+        <select id="customerId" name="customerId" required>
+            <!-- Options populated dynamically -->
+        </select>
+
+        <label for="eventId">Event:</label>
+        <select id="eventId" name="eventId" required>
+            <!-- Options populated dynamically -->
+        </select>
+
+        <label for="ticketCount">Number of Tickets:</label>
+        <input type="number" id="ticketCount" name="ticketCount" min="1" required>
+
+        <button type="submit">Book Tickets</button>
+    </form>
+
+    <div id="response"></div>
+
+    <script>
+        const customerSelect = document.getElementById('customerId');
+        const eventSelect = document.getElementById('eventId');
+
+        // Fetch and populate dropdowns for customers and events
+        async function fetchDropdownData() {
+            try {
+                const [customersResponse, eventsResponse] = await Promise.all([
+                    fetch('http://localhost/get-customers.php'),
+                    fetch('http://localhost/get-events.php'),
+                ]);
+
+                const customers = await customersResponse.json();
+                const events = await eventsResponse.json();
+
+                // Populate customers dropdown
+                customers.forEach(customer => {
+                    const option = document.createElement('option');
+                    option.value = customer.id;
+                    option.textContent = customer.name;
+                    customerSelect.appendChild(option);
+                });
+
+                // Populate events dropdown
+                events.forEach(event => {
+                    const option = document.createElement('option');
+                    option.value = event.id;
+                    option.textContent = event.name;
+                    eventSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error fetching dropdown data:', error);
+                document.getElementById('response').innerText = 'Error loading customer or event data.';
+            }
+        }
+
+        fetchDropdownData();
+
+        // Handle form submission
+        document.getElementById('ticketForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                const response = await fetch('http://localhost/book-ticket.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+                const result = await response.json();
+                document.getElementById('response').innerText = result.message;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('response').innerText = 'Error booking ticket.';
+            }
+        });
+    </script>
+</body>
+</html>
